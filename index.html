@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KATSEYE // World Tour: Python Game State Vault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090e1f;
+      --card-bg: rgba(22, 29, 64, 0.7);
+      --ice-blue: #7ee8fa;
+      --soft-blue: #a8e6ff;
+      --vibrant-purple: #c084fc;
+      --soft-purple: #d8b4fe;
+      --neon-pink: #f472b6;
+      --gold: #fde047;
+      --text-main: #f0f7ff;
+      --text-muted: #94a3b8;
+      --font-ui: 'Plus Jakarta Sans', sans-serif;
+      --font-code: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% -20%, #2e266d 0%, #0d122e 45%, #070914 100%);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 60px;
+    }
+
+    /* Ambient Concert Lighting */
+    .spotlight-left {
+      position: fixed;
+      top: -100px;
+      left: 10%;
+      width: 400px;
+      height: 700px;
+      background: radial-gradient(ellipse at center, rgba(126, 232, 250, 0.22), transparent 70%);
+      transform: rotate(25deg);
+      pointer-events: none;
+      filter: blur(40px);
+      z-index: 0;
+    }
+
+    .spotlight-right {
+      position: fixed;
+      top: -100px;
+      right: 10%;
+      width: 400px;
+      height: 700px;
+      background: radial-gradient(ellipse at center, rgba(192, 132, 252, 0.25), transparent 70%);
+      transform: rotate(-25deg);
+      pointer-events: none;
+      filter: blur(40px);
+      z-index: 0;
+    }
+
+    header {
+      width: 100%;
+      max-width: 900px;
+      padding: 24px 20px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(126, 232, 250, 0.12);
+      border: 1px solid rgba(126, 232, 250, 0.4);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--ice-blue);
+      text-transform: uppercase;
+      box-shadow: 0 0 16px rgba(126, 232, 250, 0.2);
+    }
+
+    .vip-stats {
+      display: flex;
+      gap: 12px;
+    }
+
+    .stat-badge {
+      background: rgba(22, 29, 64, 0.85);
+      border: 1px solid rgba(192, 132, 252, 0.35);
+      padding: 8px 16px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 85px;
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--soft-purple);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: var(--ice-blue);
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 900px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: rgba(13, 18, 44, 0.7);
+      backdrop-filter: blur(12px);
+      padding: 6px;
+      border-radius: 20px;
+      border: 1px solid rgba(168, 230, 255, 0.2);
+      gap: 6px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 8px;
+      border-radius: 14px;
+      font-family: var(--font-ui);
+      font-weight: 800;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(126, 232, 250, 0.25), rgba(192, 132, 252, 0.25));
+      border: 1px solid rgba(126, 232, 250, 0.5);
+      color: #fff;
+      box-shadow: 0 0 20px rgba(126, 232, 250, 0.25);
+    }
+
+    .section-card {
+      display: none;
+      background: var(--card-bg);
+      backdrop-filter: blur(18px);
+      border-radius: 24px;
+      border: 1px solid rgba(192, 132, 252, 0.25);
+      padding: 26px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .section-card.active {
+      display: block;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* SECTION 1: INTERACTIVE CONCERT RIDER (DICTIONARY EXPLORER) */
+    .hero-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, var(--ice-blue), var(--soft-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .console-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 720px) {
+      .console-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .code-preview {
+      background: #060914;
+      border-radius: 16px;
+      border: 1px solid rgba(126, 232, 250, 0.2);
+      padding: 16px;
+      font-family: var(--font-code);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .code-line {
+      display: block;
+      padding: 2px 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .code-line:hover {
+      background: rgba(126, 232, 250, 0.1);
+    }
+
+    .code-line.active-line {
+      background: rgba(192, 132, 252, 0.25);
+      border-left: 3px solid var(--vibrant-purple);
+      color: #fff;
+    }
+
+    .tag-dict { color: #f472b6; }
+    .tag-key { color: var(--ice-blue); font-weight: 700; }
+    .tag-val { color: var(--soft-purple); }
+    .tag-comm { color: #526079; font-style: italic; }
+
+    .stage-monitor {
+      background: rgba(10, 14, 34, 0.9);
+      border-radius: 16px;
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .monitor-header {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--ice-blue);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .monitor-body {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 130px;
+      font-family: var(--font-code);
+      font-size: 0.88rem;
+    }
+
+    .monitor-explanation {
+      margin-top: 10px;
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      line-height: 1.45;
+    }
+
+    .action-triggers {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      background: rgba(126, 232, 250, 0.15);
+      border: 1px solid var(--ice-blue);
+      color: var(--ice-blue);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-family: var(--font-code);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn:hover {
+      background: var(--ice-blue);
+      color: #050813;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(126, 232, 250, 0.4);
+    }
+
+    /* SECTION 2: KAHOOT ARENA */
+    .kahoot-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .kahoot-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .timer-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .timer-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--ice-blue), var(--vibrant-purple));
+      transition: width 1s linear;
+    }
+
+    .question-box {
+      background: rgba(10, 14, 38, 0.85);
+      border: 1px solid rgba(168, 230, 255, 0.35);
+      padding: 20px;
+      border-radius: 18px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.4;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .kahoot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .kahoot-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kahoot-btn {
+      padding: 20px 16px;
+      border-radius: 16px;
+      border: none;
+      color: #ffffff;
+      font-family: var(--font-ui);
+      font-weight: 800;
+      font-size: 0.98rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      transition: transform 0.12s ease, filter 0.15s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kahoot-btn:active {
+      transform: scale(0.97);
+    }
+
+    .kahoot-btn:hover {
+      filter: brightness(1.15);
+    }
+
+    .k-shape {
+      font-size: 1.3rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 8px;
+    }
+
+    /* Kahoot 4 Colors updated with KATSEYE concert light palette */
+    .k-btn-1 { background: linear-gradient(135deg, #0284c7, #38bdf8); } /* Stage Blue */
+    .k-btn-2 { background: linear-gradient(135deg, #7c3aed, #c084fc); } /* Laser Purple */
+    .k-btn-3 { background: linear-gradient(135deg, #db2777, #f472b6); } /* Glam Pink */
+    .k-btn-4 { background: linear-gradient(135deg, #0d9488, #2dd4bf); } /* Cyber Teal */
+
+    .k-feedback {
+      margin-top: 14px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .k-feedback.correct {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(74, 222, 128, 0.6);
+      color: #86efac;
+    }
+
+    .k-feedback.incorrect {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(248, 113, 113, 0.6);
+      color: #fca5a5;
+    }
+
+    .next-k-btn {
+      background: #ffffff;
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* SECTION 3: SOUNDCHECK (MICRO-DEBUGGER) */
+    .fixer-scenario {
+      background: rgba(10, 14, 38, 0.8);
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      padding: 18px;
+      border-radius: 16px;
+      margin-bottom: 14px;
+    }
+
+    .fixer-buggy {
+      background: #040711;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: var(--font-code);
+      font-size: 0.9rem;
+      color: #fca5a5;
+      margin: 10px 0;
+      border-left: 4px solid #ef4444;
+    }
+
+    .fixer-choice-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .fixer-btn {
+      background: rgba(22, 29, 64, 0.8);
+      border: 1px solid rgba(126, 232, 250, 0.3);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-family: var(--font-code);
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .fixer-btn:hover {
+      border-color: var(--ice-blue);
+      background: rgba(126, 232, 250, 0.12);
+      transform: translateX(4px);
+    }
+
+    /* SECTION 4: LINE 47 BRIDGE */
+    .bridge-preview {
+      background: #060914;
+      border: 1px solid rgba(192, 132, 252, 0.4);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .keys-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0 10px;
+    }
+
+    .virtual-key {
+      background: #1a2249;
+      border: 2px solid var(--soft-purple);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-family: var(--font-code);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #0d122e;
+      transition: all 0.1s ease;
+    }
+
+    .virtual-key:active, .virtual-key.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 #0d122e;
+      background: var(--ice-blue);
+      color: #000;
+    }
+
+    .copy-chip {
+      background: rgba(126, 232, 250, 0.15);
+      border: 1px dashed var(--ice-blue);
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 14px;
+      color: var(--ice-blue);
+    }
+
+    .copy-chip:hover {
+      background: rgba(126, 232, 250, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="spotlight-left"></div>
+  <div class="spotlight-right"></div>
+
+  <header>
+    <div class="brand-tag">
+      <span>✨</span> KATSEYE // CODE TOUR
+    </div>
+    <div class="vip-stats">
+      <div class="stat-badge">
+        <span class="stat-label">Hype Score</span>
+        <span class="stat-value" id="ui-score">0</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-label">Streak</span>
+        <span class="stat-value" id="ui-streak">0🔥</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-container">
+
+    <!-- NAVIGATION TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(0)">
+        <span>🎤</span> Stage 1: The Rider (Dicts)
+      </button>
+      <button class="tab-btn" onclick="switchTab(1)">
+        <span>⚡</span> Stage 2: Kahoot Blitz
+      </button>
+      <button class="tab-btn" onclick="switchTab(2)">
+        <span>🛠️</span> Stage 3: Soundcheck
+      </button>
+      <button class="tab-btn" onclick="switchTab(3)">
+        <span>🚀</span> Stage 4: Line 47 Bridge
+      </button>
+    </div>
+
+    <!-- TAB 1: LIVE DICTIONARY CONSOLE -->
+    <div class="section-card active" id="tab-0">
+      <h2 class="hero-title">VIP Backstage Concert Rider: The `game` Dictionary</h2>
+      <p class="hero-sub">
+        Imagine KATSEYE's concert stage. The band needs to know: <em>Where is Sophia? Where is Lara? What is the current song speed?</em> Instead of 10 loose variables rolling off the stage, we store the entire concert state in <strong>ONE Dictionary</strong>!
+      </p>
+
+      <div class="console-split">
+        <div class="code-preview">
+          <div style="color: #64748b; margin-bottom: 8px;"># Python Game State (Lines 35-46)</div>
+          <span class="code-line" onclick="inspectKey('state')"><span class="tag-dict">game</span> = {</span>
+          <span class="code-line" id="line-snake" onclick="inspectKey('snake')">&nbsp;&nbsp;<span class="tag-key">'snake'</span>: [(10, 10), (9, 10)],</span>
+          <span class="code-line" id="line-dir" onclick="inspectKey('direction')">&nbsp;&nbsp;<span class="tag-key">'direction'</span>: (1, 0),</span>
+          <span class="code-line" id="line-apple" onclick="inspectKey('apple')">&nbsp;&nbsp;<span class="tag-key">'apple'</span>: (5, 7),</span>
+          <span class="code-line" id="line-score" onclick="inspectKey('score')">&nbsp;&nbsp;<span class="tag-key">'score'</span>: <span id="code-score-val">0</span>,</span>
+          <span class="code-line" id="line-speed" onclick="inspectKey('move_interval')">&nbsp;&nbsp;<span class="tag-key">'move_interval'</span>: 0.16,</span>
+          <span class="code-line" id="line-gamestate" onclick="inspectKey('game_state')">&nbsp;&nbsp;<span class="tag-key">'game_state'</span>: <span class="tag-val">'running'</span></span>
+          <span class="code-line">}</span>
+        </div>
+
+        <div class="stage-monitor">
+          <div>
+            <div class="monitor-header">
+              <span>Backstage Teleprompter</span>
+              <span id="inspect-label" style="color: var(--vibrant-purple)">Tap any line on the left!</span>
+            </div>
+            <div class="monitor-body" id="inspect-box">
+              <span style="color: var(--text-muted)">Click a key in the Python code on the left (e.g. <code>'snake'</code> or <code>'score'</code>) to see how KATSEYE's stage manager tracks it!</span>
+            </div>
+            <div class="monitor-explanation" id="inspect-desc"></div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.72rem; color: var(--soft-purple); text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">Simulate Stage Actions:</div>
+            <div class="action-triggers">
+              <button class="action-btn" onclick="simulateEatOrb()">✨ Grab Neon Lightstick (+1 Score)</button>
+              <button class="action-btn" onclick="simulateTurn()">🔄 Dance Turn (Change Dir)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: KAHOOT STYLE BLITZ -->
+    <div class="section-card" id="tab-1">
+      <div class="kahoot-card">
+        <div class="kahoot-top">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="background: rgba(192, 132, 252, 0.2); border: 1px solid var(--vibrant-purple); padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; color: var(--soft-purple);">
+              QUESTION <span id="k-q-num">1</span>/4
+            </span>
+            <span style="color: var(--text-muted); font-size: 0.85rem;" id="k-theme-hint">Theme: Dictionary Keys</span>
+          </div>
+          <div id="k-countdown" style="font-weight: 900; color: var(--ice-blue); font-size: 1.1rem;">15s</div>
+        </div>
+
+        <div class="timer-bar-wrap">
+          <div class="timer-bar" id="k-timer"></div>
+        </div>
+
+        <div class="question-box" id="k-question">
+          How do we retrieve the snake's current score from our <code>game</code> dictionary?
+        </div>
+
+        <div class="kahoot-grid" id="k-options">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="k-feedback" id="k-feedback">
+          <div id="k-feedback-text" style="font-weight: 700;"></div>
+          <button class="next-k-btn" id="k-next-btn" onclick="nextKahootQuestion()">Next Track ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: SOUNDCHECK BUG FIXER -->
+    <div class="section-card" id="tab-2">
+      <h2 class="hero-title">Soundcheck Fixer // The 3 Classic Mistakes</h2>
+      <p class="hero-sub">Before the concert lights hit, fix the audio feed! Catch the Python bug before opening VS Code.</p>
+
+      <div class="fixer-scenario">
+        <div style="font-size: 0.8rem; font-weight: 800; color: var(--ice-blue); text-transform: uppercase;">Bug #1: The Missing Key Quotes</div>
+        <div class="fixer-buggy">
+          # The snake touched an apple! Let's add 1 to score:<br>
+          <span style="text-decoration: underline wavy #ef4444;">game[score]</span> += 1
+        </div>
+        <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 10px;">Python gives: <code>NameError: name 'score' is not defined</code>. Why did the concert monitor crash?</p>
+        <div class="fixer-choice-grid">
+          <button class="fixer-btn" onclick="checkFix(this, false, 'Score needs quotation marks!')">A) Dictionaries cannot hold numbers, only letters.</button>
+          <button class="fixer-btn" onclick="checkFix(this, true, 'EXACTLY! Without quotes, Python thinks score is a standalone variable that was never declared. In our dict, keys are Strings: game[\'score\']')">B) Because <code>'score'</code> is a string key and MUST have quotes: <code>game['score']</code></button>
+          <button class="fixer-btn" onclick="checkFix(this, false, '+= 1 is valid in Python! The key is what caused the crash.')">C) In Python you cannot write <code>+= 1</code>.</button>
+        </div>
+        <div class="fix-msg" style="margin-top: 10px; font-size: 0.88rem; font-weight: 700; display: none;"></div>
+      </div>
+
+      <div class="fixer-scenario">
+        <div style="font-size: 0.8rem; font-weight: 800; color: var(--soft-purple); text-transform: uppercase;">Bug #2: Coordinate Unpacking</div>
+        <div class="fixer-buggy">
+          # Snake direction is stored as a (dx, dy) tuple:<br>
+          dx, dy = game['direction']
+        </div>
+        <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 10px;">If <code>game['direction']</code> is <code>(1, 0)</code>, what does <code>dx</code> become?</p>
+        <div class="fixer-choice-grid">
+          <button class="fixer-btn" onclick="checkFix(this, true, 'Spot on! dx takes the first element (1, moving right), dy takes the second element (0).')">A) <code>dx = 1</code> and <code>dy = 0</code></button>
+          <button class="fixer-btn" onclick="checkFix(this, false, 'Remember: dx is horizontal (first), dy is vertical (second).')">B) <code>dx = 0</code> and <code>dy = 1</code></button>
+        </div>
+        <div class="fix-msg" style="margin-top: 10px; font-size: 0.88rem; font-weight: 700; display: none;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: LINE 47 BRIDGE -->
+    <div class="section-card" id="tab-3">
+      <h2 class="hero-title">VIP Bridge to VS Code // Line 47</h2>
+      <p class="hero-sub">You stopped right at <strong>Line 46</strong>. The very next function is <code>def on_key_down(key):</code>. Test it hands-on below!</p>
+
+      <div class="bridge-preview">
+        <div style="font-family: var(--font-code); font-size: 0.85rem; color: #94a3b8; line-height: 1.6;">
+          <span style="color: #64748b;"># Line 47 in VS Code:</span><br>
+          <span style="color: #f472b6;">def</span> <span style="color: var(--ice-blue);">on_key_down</span>(key):<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #f472b6;">global</span> game<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;dx, dy = game[<span style="color: var(--soft-purple);">'direction'</span>]<br><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #64748b;"># What happens when she presses an arrow:</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #f472b6;">if</span> key == keys.UP <span style="color: #f472b6;">and</span> dy == 0:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;game[<span style="color: var(--soft-purple);">'next_direction'</span>] = (<span style="color: var(--gold);">0, -1</span>)
+        </div>
+
+        <div class="keys-row">
+          <button class="virtual-key" id="vkey-up" onclick="pressArrow('UP', 0, -1)">⬆️ UP (0, -1)</button>
+        </div>
+        <div class="keys-row" style="margin-top: 0;">
+          <button class="virtual-key" id="vkey-left" onclick="pressArrow('LEFT', -1, 0)">⬅️ LEFT (-1, 0)</button>
+          <button class="virtual-key" id="vkey-down" onclick="pressArrow('DOWN', 0, 1)">⬇️ DOWN (0, 1)</button>
+          <button class="virtual-key" id="vkey-right" onclick="pressArrow('RIGHT', 1, 0)">➡️ RIGHT (1, 0)</button>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.04); border-radius: 12px; padding: 14px; margin-top: 18px; font-family: var(--font-code); font-size: 0.9rem; text-align: center;">
+          Current <code>game['next_direction']</code>: <span id="vkey-status" style="color: var(--ice-blue); font-weight: 700;">(1, 0) [Moving Right]</span>
+        </div>
+
+        <div class="copy-chip" onclick="copyCheatSheet()">
+          📋 Click to Copy Line 47-50 Cheat Sheet for VS Code
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- AUDIO SYNTHESIS FOR DOPAMINE REWARD ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioContext();
+    }
+
+    function playTone(freq, type="sine", duration=0.15) {
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function soundSuccess() {
+      playTone(523.25, 'triangle', 0.12);
+      setTimeout(() => playTone(659.25, 'triangle', 0.12), 90);
+      setTimeout(() => playTone(783.99, 'triangle', 0.18), 180);
+      setTimeout(() => playTone(1046.50, 'sine', 0.25), 260);
+    }
+
+    function soundWrong() {
+      playTone(220, 'sawtooth', 0.2);
+      setTimeout(() => playTone(196, 'sawtooth', 0.25), 100);
+    }
+
+    // --- GAME STATE ---
+    let hypeScore = 0;
+    let streak = 0;
+
+    function addScore(points) {
+      hypeScore += points;
+      streak += 1;
+      document.getElementById('ui-score').textContent = hypeScore;
+      document.getElementById('ui-streak').textContent = streak + "🔥";
+      soundSuccess();
+    }
+
+    function resetStreak() {
+      streak = 0;
+      document.getElementById('ui-streak').textContent = streak + "⚡";
+      soundWrong();
+    }
+
+    // --- TAB SWITCHER ---
+    function switchTab(index) {
+      initAudio();
+      playTone(400, 'sine', 0.06);
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+      document.querySelectorAll('.section-card').forEach((sec, i) => {
+        sec.classList.toggle('active', i === index);
+      });
+      if (index === 1 && currentKahoot === 0 && !kahootRunning) {
+        startKahootQuestion();
+      }
+    }
+
+    // --- STAGE 1: DICTIONARY INSPECTOR ---
+    let localScore = 0;
+    const keyData = {
+      snake: {
+        title: "Key: 'snake' (Type: List of Coordinate Tuples)",
+        code: "[(10, 10), (9, 10)]",
+        desc: "Each item is an (x, y) grid tile on the concert stage. Index 0 is the Snake Head (Lead Dancer). Index 1 is the body segment following right behind!"
+      },
+      direction: {
+        title: "Key: 'direction' (Type: Tuple)",
+        code: "(1, 0)",
+        desc: "(dx, dy) coordinate velocity. (1, 0) means move +1 Column every tick (moving Right). (0, -1) would mean moving Up."
+      },
+      apple: {
+        title: "Key: 'apple' (Type: Tuple)",
+        code: "(5, 7)",
+        desc: "The coordinates of the glowing Neon Lightstick currently placed on the arena floor waiting to be collected!"
+      },
+      score: {
+        title: "Key: 'score' (Type: Integer)",
+        code: "0",
+        desc: "How many neon lightsticks the player has picked up! Every time snake head == apple, we run: game['score'] += 1"
+      },
+      move_interval: {
+        title: "Key: 'move_interval' (Type: Float)",
+        code: "0.16",
+        desc: "Concert tempo! Seconds between snake steps. Decreases over time so the snake accelerates as the beat drops!"
+      },
+      game_state: {
+        title: "Key: 'game_state' (Type: String)",
+        code: "'running'",
+        desc: "Can be 'running' or 'lost'. If the snake crashes into stage boundaries or itself, we set this key to 'lost'!"
+      },
+      state: {
+        title: "The Whole Dictionary: game",
+        code: "{ 'snake': [...], 'score': 0, ... }",
+        desc: "One single dictionary keeps the whole concert synchronized so any function in your code can access and update it!"
+      }
+    };
+
+    function inspectKey(key) {
+      initAudio();
+      playTone(550, 'sine', 0.08);
+
+      document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+      const lineEl = document.getElementById(`line-${key}`);
+      if (lineEl) lineEl.classList.add('active-line');
+
+      const data = keyData[key];
+      document.getElementById('inspect-label').textContent = data.title;
+      document.getElementById('inspect-box').innerHTML = `<span style="color: var(--ice-blue);">${data.code}</span>`;
+      document.getElementById('inspect-desc').textContent = data.desc;
+    }
+
+    function simulateEatOrb() {
+      localScore += 1;
+      document.getElementById('code-score-val').textContent = localScore;
+      addScore(50);
+      inspectKey('score');
+      document.getElementById('inspect-box').innerHTML = `<span style="color: #4ade80;">game['score'] = ${localScore} (Neon lightstick collected! +50 Hype)</span>`;
+    }
+
+    function simulateTurn() {
+      const dirs = [
+        { name: "Up", tuple: "(0, -1)" },
+        { name: "Down", tuple: "(0, 1)" },
+        { name: "Left", tuple: "(-1, 0)" },
+        { name: "Right", tuple: "(1, 0)" }
+      ];
+      const pick = dirs[Math.floor(Math.random() * dirs.length)];
+      initAudio();
+      playTone(700, 'sine', 0.09);
+      inspectKey('direction');
+      document.getElementById('inspect-box').innerHTML = `<span style="color: var(--vibrant-purple);">game['direction'] = ${pick.tuple} (Turned ${pick.name}!)</span>`;
+    }
+
+    // --- STAGE 2: KAHOOT BLITZ ---
+    const kahootData = [
+      {
+        hint: "Dictionary Syntax 101",
+        q: "In line 42, we set: <code>'score': 0</code>. How does Python find the score later?",
+        answers: [
+          { text: "game['score']", correct: true },
+          { text: "game.score()", correct: false },
+          { text: "game[0]", correct: false },
+          { text: "score.game", correct: false }
+        ],
+        expl: "Brackets with quotation marks <code>game['score']</code>! In Python dictionaries, we look up values using their exact Key name inside square brackets."
+      },
+      {
+        hint: "Snake Coordinates",
+        q: "<code>game['snake'][0]</code> gives us <code>(10, 10)</code>. What is this tuple representing?",
+        answers: [
+          { text: "The very tip of the snake's tail", correct: false },
+          { text: "The Snake's Head (Lead Dancer!)", correct: true },
+          { text: "How fast the snake moves", correct: false },
+          { text: "The score value", correct: false }
+        ],
+        expl: "Index <code>[0]</code> is always the first element in Python lists—which is our Snake Head!"
+      },
+      {
+        hint: "Dictionary Updates",
+        q: "When KATSEYE collects a Lightstick, which code increases our score in the dictionary?",
+        answers: [
+          { text: "score = +1", correct: false },
+          { text: "game['score'] += 1", correct: true },
+          { text: "game.add('score')", correct: false },
+          { text: "game{'score'} + 1", correct: false }
+        ],
+        expl: "<code>game['score'] += 1</code> fetches the current integer and increments it by 1 right inside our game dictionary!"
+      },
+      {
+        hint: "Key Check",
+        q: "What happens if you type <code>game['laser_lights']</code>, but that key DOES NOT exist in our dictionary?",
+        answers: [
+          { text: "Python gives 0", correct: false },
+          { text: "Python crashes with a KeyError!", correct: true },
+          { text: "Python ignores it quietly", correct: false },
+          { text: "The snake turns backwards", correct: false }
+        ],
+        expl: "A <code>KeyError</code>! Python refuses to guess. If a key isn't in the concert rider, Python stops the show!"
+      }
+    ];
+
+    let currentKahoot = 0;
+    let kahootTimer = null;
+    let kahootRunning = false;
+    let timeLeft = 15;
+
+    function startKahootQuestion() {
+      kahootRunning = true;
+      const data = kahootData[currentKahoot];
+      document.getElementById('k-q-num').textContent = currentKahoot + 1;
+      document.getElementById('k-theme-hint').textContent = `Theme: ${data.hint}`;
+      document.getElementById('k-question').innerHTML = data.q;
+      document.getElementById('k-feedback').style.display = 'none';
+
+      const grid = document.getElementById('k-options');
+      grid.innerHTML = '';
+
+      const shapes = ['▲', '◆', '●', '■'];
+      data.answers.forEach((ans, i) => {
+        const btn = document.createElement('button');
+        btn.className = `kahoot-btn k-btn-${i+1}`;
+        btn.innerHTML = `<span class="k-shape">${shapes[i]}</span> <span>${ans.text}</span>`;
+        btn.onclick = () => answerKahoot(ans.correct, data.expl);
+        grid.appendChild(btn);
+      });
+
+      // Timer countdown
+      timeLeft = 15;
+      document.getElementById('k-countdown').textContent = `${timeLeft}s`;
+      document.getElementById('k-timer').style.width = '100%';
+
+      clearInterval(kahootTimer);
+      const startTime = Date.now();
+      const totalTime = 15000;
+
+      kahootTimer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, totalTime - elapsed);
+        timeLeft = Math.ceil(remaining / 1000);
+        document.getElementById('k-countdown').textContent = `${timeLeft}s`;
+        document.getElementById('k-timer').style.width = `${(remaining / totalTime) * 100}%`;
+
+        if (remaining <= 0) {
+          clearInterval(kahootTimer);
+          answerKahoot(false, `Time expired! ${data.expl}`);
+        }
+      }, 100);
+    }
+
+    function answerKahoot(isCorrect, explanation) {
+      clearInterval(kahootTimer);
+      const feedback = document.getElementById('k-feedback');
+      const text = document.getElementById('k-feedback-text');
+      feedback.style.display = 'flex';
+
+      // Disable buttons
+      document.querySelectorAll('.kahoot-btn').forEach(btn => btn.disabled = true);
+
+      if (isCorrect) {
+        addScore(100 + timeLeft * 10);
+        feedback.className = 'k-feedback correct';
+        text.innerHTML = `✨ <strong>CORRECT! +${100 + timeLeft * 10} HYPE</strong><br><span style="font-weight: 400; font-size: 0.85rem;">${explanation}</span>`;
+      } else {
+        resetStreak();
+        feedback.className = 'k-feedback incorrect';
+        text.innerHTML = `❌ <strong>SOUNDCHECK FLUB!</strong><br><span style="font-weight: 400; font-size: 0.85rem;">${explanation}</span>`;
+      }
+    }
+
+    function nextKahootQuestion() {
+      currentKahoot++;
+      if (currentKahoot >= kahootData.length) {
+        // Complete
+        document.getElementById('k-question').innerHTML = `🎉 <strong>VIP SHOWCASE CLEAR!</strong><br>You scored <strong>${hypeScore} Hype Points</strong>! Ready to conquer line 47 in VS Code!`;
+        document.getElementById('k-options').innerHTML = '';
+        document.getElementById('k-feedback').style.display = 'none';
+        document.getElementById('k-countdown').textContent = 'DONE';
+        soundSuccess();
+      } else {
+        startKahootQuestion();
+      }
+    }
+
+    // --- STAGE 3: DEBUGGER ---
+    function checkFix(btn, isCorrect, msg) {
+      initAudio();
+      const parent = btn.closest('.fixer-scenario');
+      const msgBox = parent.querySelector('.fix-msg');
+      msgBox.style.display = 'block';
+
+      if (isCorrect) {
+        addScore(75);
+        msgBox.style.color = '#86efac';
+        msgBox.innerHTML = `✅ ${msg}`;
+        btn.style.borderColor = '#4ade80';
+        btn.style.background = 'rgba(74, 222, 128, 0.2)';
+      } else {
+        resetStreak();
+        msgBox.style.color = '#fca5a5';
+        msgBox.innerHTML = `❌ ${msg}`;
+        btn.style.borderColor = '#ef4444';
+        btn.style.background = 'rgba(239, 68, 68, 0.2)';
+      }
+    }
+
+    // --- STAGE 4: ARROW PREVIEW ---
+    function pressArrow(dirName, dx, dy) {
+      initAudio();
+      playTone(350 + (dx + dy) * 100, 'sine', 0.12);
+
+      document.querySelectorAll('.virtual-key').forEach(k => k.classList.remove('pressed'));
+      const activeBtn = document.getElementById(`vkey-${dirName.toLowerCase()}`);
+      if (activeBtn) activeBtn.classList.add('pressed');
+
+      document.getElementById('vkey-status').textContent = `(${dx}, ${dy}) [Moving ${dirName}]`;
+      addScore(10);
+    }
+
+    function copyCheatSheet() {
+      initAudio();
+      const snippet = `def on_key_down(key):
+    global game
+    if game['game_state'] != 'running':
+        return
+
+    dx, dy = game['direction']
+
+    if key == keys.UP and dy == 0:
+        game['next_direction'] = (0, -1)
+    elif key == keys.DOWN and dy == 0:
+        game['next_direction'] = (0, 1)
+    elif key == keys.RIGHT and dx == 0:
+        game['next_direction'] = (1, 0)
+    elif key == keys.LEFT and dx == 0:
+        game['next_direction'] = (-1, 0)`;
+
+      navigator.clipboard.writeText(snippet).then(() => {
+        playTone(880, 'triangle', 0.15);
+        alert("✨ Copied the Line 47-50 VS Code block to your clipboard!");
+      });
+    }
+  </script>
+</body>
+</html>
